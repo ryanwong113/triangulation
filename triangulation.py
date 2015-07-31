@@ -1,5 +1,7 @@
 import itertools
 import random
+import matplotlib.pyplot as pyplot
+from matplotlib.collections import PolyCollection
 
 
 # Innter point class
@@ -20,7 +22,7 @@ def init():
 	points = []
 	range_min = 1
 	range_max = 50
-	num_of_points = 5
+	num_of_points = 10
 	for i in range(0, num_of_points):
 		rand_x = random.randint(range_min, range_max)
 		rand_y = random.randint(range_min, range_max)
@@ -68,7 +70,15 @@ def form_triangle(point1, point2, point3, other_points):
 			return False
 	return True
 
+def plot(triangles):
+	for triangle in triangles:
+		points = [[triangle[0].x, triangle[0].y], [triangle[1].x, triangle[1].y], [triangle[2].x, triangle[2].y]]
+		shape = pyplot.Polygon(points, fill=None, edgecolor='r')
+		pyplot.gca().add_patch(shape)
 
-compute(init())
+	pyplot.plot()
+	pyplot.show() 
+
+plot(compute(init()))
 
 
