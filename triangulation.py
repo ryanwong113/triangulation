@@ -10,24 +10,28 @@ class Point:
 		self.x = x
 		self.y = y
 
-	def __str__(self):
+	def __cmp__(self, other):
+		return self.x.__cmp__(other.x) and self.y.__cmp__(other.y)
+
+	def __repr__(self):
 		return 'Point[x=%d, y=%d]' % (self.x, self.y)
 
-	def __eq__(self, other):
-		return (self.x == other.x) and (self.y == other.y)
 
 # Main program
+# Key function for sorting the point
+def get_point_order_key(point):
+	return (point.x, point.y)
+
 # Initialisation
 def init():
-	points = []
 	range_min = 1
-	range_max = 50
+	range_max = 10
 	num_of_points = 10
-	for i in range(0, num_of_points):
-		rand_x = random.randint(range_min, range_max)
-		rand_y = random.randint(range_min, range_max)
-		point = Point(rand_x, rand_y)
-		points.append(point)
+	points = [Point(random.randint(range_min, range_max), random.randint(range_min, range_max)) for i in range(0, num_of_points)]
+	points.sort(key=get_point_order_key)
+
+	
+
 
 	return points
 
@@ -76,9 +80,8 @@ def plot(triangles):
 		shape = pyplot.Polygon(points, fill=None, edgecolor='r')
 		pyplot.gca().add_patch(shape)
 
-	pyplot.plot()
+	pyplot.plot(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
 	pyplot.show() 
 
-plot(compute(init()))
-
-
+#plot(compute(init()))
+init()
