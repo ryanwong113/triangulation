@@ -1,10 +1,12 @@
 import itertools
 import random
 import matplotlib.pyplot as pyplot
+import math
 from matplotlib.collections import PolyCollection
+from operator import attrgetter
 
 
-# Innter point class
+# Inner point class
 class Point:
 	def __init__(self, x, y):
 		self.x = x
@@ -14,7 +16,30 @@ class Point:
 		return self.x.__cmp__(other.x) and self.y.__cmp__(other.y)
 
 	def __repr__(self):
-		return 'Point[x=%d, y=%d]' % (self.x, self.y)
+		return 'Point(x=%d, y=%d)' % (self.x, self.y)
+
+# Inner line class
+class Line:
+	def __init__(self, point_a, point_b):
+		self.point_a = point_a
+		self.point_b = point_b
+
+	def __cmp__(self, other):
+		return self.point_a.__cmp__(other.point_a) and self.point_b.__cmp__(other.point_b)
+
+	def __repr__(self):
+		return 'Line(%s-%s)' % (self.point_a, self.point_b)
+
+# Inner segment class
+class Segment:
+	def __init__(self, points, lines):
+		self.points = points
+		self.lines = lines
+		self.lowest_point = min(points, key=attrgetter('y'))
+		self.size = len(points)
+
+	def __repr__(self):
+		return 'Segment %d' % (self.size)
 
 
 # Main program
@@ -22,18 +47,67 @@ class Point:
 def get_point_order_key(point):
 	return (point.x, point.y)
 
+# Split the points into segments
+def split_points(points):
+	if (len(points) <= 3):
+		return Segment(points, [Line(combination[0], combination[1]) for combination in itertools.combinations(points, 2)])
+	else:
+		split_index = int(math.ceil(len(points)/2.0))
+		return [split_points(points[:split_index])] + [split_points(points[split_index:len(points)])]
+
+# Merge the segments
+def merge_segments(segments):
+	for segment in segments:
+		if type(segment) is list:
+			merge_segments(segment)
+		else:
+			# Merge 2 segments together
+			points = []
+			lines = []
+			segment_left = segment[0]
+			segment_right = segemnt[1]
+			segment_left_lowest = segment_left.lowest_point
+			segment_right_lowest = segment_right.lowest_point
+
+			# Remove the lowest points from left and right segments
+			segment_left.remove(segment_left_lowest)
+			segment_right.remove(segment_right_lowest)
+
+			# Base line
+			base_line = Line(segemnt_left_lowest, segemnt_right_lowest)
+			lines.append(base_line)
+
+			# Check right segment
+			for point in segment_right.points:
+				
+
+			# Check left segment
+			for point in segment_left.points:
+				
+			# New segment
+			points.extend(segment_left.points).extend(segment_right.points)
+			lines.extend(segment_left.lines).extend(segment_right.lines)
+			Segment(points, lines)
+			break
+
+			
+
+
 # Initialisation
 def init():
 	range_min = 1
 	range_max = 10
 	num_of_points = 10
-	points = [Point(random.randint(range_min, range_max), random.randint(range_min, range_max)) for i in range(0, num_of_points)]
-	points.sort(key=get_point_order_key)
-
+	points = [[Point(random.randint(range_min, range_max), random.randint(range_min, range_max)) for i in range(0, num_of_points)]]
+	points[0].sort(key=get_point_order_key)
+	point_segments = split_points(points[0])
 	
-
+	# print point_segments
+	merge_segments(point_segments)
 
 	return points
+
+
 
 def compute(all_points):
 	results = []
