@@ -78,8 +78,15 @@ def merge_segments(segments):
 			lines.append(base_line)
 
 			# Check right segment
-			for point in segment_right.points:
-				
+			for i in range(len(segment_right.points)-1)
+				current_candidate = segment_right.points[i]
+				next_candidate = segment_right.points[i+1]
+
+				# Check current candidate is less than 180 degree
+
+
+			
+
 
 			# Check left segment
 			for point in segment_left.points:
