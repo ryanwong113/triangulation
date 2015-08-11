@@ -83,9 +83,10 @@ def merge_segments(segments):
 				next_candidate = segment_right.points[i+1]
 
 				# Check current candidate is less than 180 degree
+				vertical_distance = current_candidate.y - segment_right_lowest.y 
+				horizontal_distance = segment_right_lowest.x - current_candidate.x
+				angle = math.atan(vertical_distance/horizontal_distance)
 
-
-			
 
 
 			# Check left segment
