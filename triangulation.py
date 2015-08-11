@@ -64,37 +64,43 @@ def merge_segments(segments):
 			# Merge 2 segments together
 			points = []
 			lines = []
-			segment_left = segment[0]
-			segment_right = segemnt[1]
+			segment_left = segments[0]
+			segment_right = segments[1]
 			segment_left_lowest = segment_left.lowest_point
 			segment_right_lowest = segment_right.lowest_point
 
 			# Remove the lowest points from left and right segments
-			segment_left.remove(segment_left_lowest)
-			segment_right.remove(segment_right_lowest)
+			segment_left.points.remove(segment_left_lowest)
+			segment_right.points.remove(segment_right_lowest)
 
 			# Base line
-			base_line = Line(segemnt_left_lowest, segemnt_right_lowest)
+			base_line = Line(segment_left_lowest, segment_right_lowest)
 			lines.append(base_line)
 
+			print segment_right.points
+
 			# Check right segment
-			for i in range(len(segment_right.points)-1)
+			for i in range(len(segment_right.points)-1):
 				current_candidate = segment_right.points[i]
 				next_candidate = segment_right.points[i+1]
 
 				# Check current candidate is less than 180 degree
 				vertical_distance = current_candidate.y - segment_right_lowest.y 
 				horizontal_distance = segment_right_lowest.x - current_candidate.x
-				angle = math.atan(vertical_distance/horizontal_distance)
+				angle = math.atan(float(vertical_distance)/float(horizontal_distance))
+
+				print 'angle: %d' % angle  
 
 
 
 			# Check left segment
-			for point in segment_left.points:
+			# for point in segment_left.points:
 				
 			# New segment
-			points.extend(segment_left.points).extend(segment_right.points)
-			lines.extend(segment_left.lines).extend(segment_right.lines)
+			points.extend(segment_left.points)
+			points.extend(segment_right.points)
+			lines.extend(segment_left.lines)
+			lines.extend(segment_right.lines)
 			Segment(points, lines)
 			break
 
