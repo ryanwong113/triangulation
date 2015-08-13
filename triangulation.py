@@ -1,10 +1,9 @@
 import itertools
 import random
-import matplotlib.pyplot as pyplot
+# import matplotlib.pyplot as pyplot
 import math
-from matplotlib.collections import PolyCollection
-from operator import attrgetter
-
+# from matplotlib.collections import PolyCollection
+import operator
 
 # Inner point class
 class Point:
@@ -12,8 +11,14 @@ class Point:
 		self.x = x
 		self.y = y
 
+	def __eq__(self, other):
+		return (self.x == other.x) and (self.y == other.y)
+
 	def __cmp__(self, other):
 		return self.x.__cmp__(other.x) and self.y.__cmp__(other.y)
+
+	def __hash__(self):
+		return hash(self.x) * hash(self.y)
 
 	def __repr__(self):
 		return 'Point(x=%d, y=%d)' % (self.x, self.y)
@@ -23,6 +28,9 @@ class Line:
 	def __init__(self, point_a, point_b):
 		self.point_a = point_a
 		self.point_b = point_b
+
+	def __eq__(self, other):
+		return (self.point_a == other.point_a) and (self.point_b == other.point_b)
 
 	def __cmp__(self, other):
 		return self.point_a.__cmp__(other.point_a) and self.point_b.__cmp__(other.point_b)
@@ -35,7 +43,7 @@ class Segment:
 	def __init__(self, points, lines):
 		self.points = points
 		self.lines = lines
-		self.lowest_point = min(points, key=attrgetter('y'))
+		self.lowest_point = min(points, key=operator.attrgetter('y'))
 		self.size = len(points)
 
 	def __repr__(self):
@@ -77,20 +85,25 @@ def merge_segments(segments):
 			base_line = Line(segment_left_lowest, segment_right_lowest)
 			lines.append(base_line)
 
-			print segment_right.points
-
 			# Check right segment
-			for i in range(len(segment_right.points)-1):
-				current_candidate = segment_right.points[i]
-				next_candidate = segment_right.points[i+1]
+			# Build a map of points to angle to the lowest_point
+			angle_map = {}
+			for point in segment_right.points:
+				vertical_distance = point.y - segment_right_lowest.y
+				horizontal_distance = segment_right_lowest.x - point.x
+				if (horizontal_distance < 0):
+					angle = math.pi - math.atan(float(vertical_distance)/float(-horizontal_distance))
+				elif (horizontal_distance == 0):
+					angle = math.pi/2
+				else:
+					angle = math.atan(float(vertical_distance)/float(horizontal_distance))
+				angle_map[point] = angle
 
-				# Check current candidate is less than 180 degree
-				vertical_distance = current_candidate.y - segment_right_lowest.y 
-				horizontal_distance = segment_right_lowest.x - current_candidate.x
-				angle = math.atan(float(vertical_distance)/float(horizontal_distance))
+			sorted_angle_map = sorted(angle_map.items(), key=operator.itemgetter(1))
 
-				print 'angle: %d' % angle  
+			
 
+			# Confirmed right segment candidate
 
 
 			# Check left segment
@@ -111,12 +124,14 @@ def merge_segments(segments):
 def init():
 	range_min = 1
 	range_max = 10
-	num_of_points = 10
-	points = [[Point(random.randint(range_min, range_max), random.randint(range_min, range_max)) for i in range(0, num_of_points)]]
+	num_of_points = 20
+	points = [[]]
+	for i in range(0, num_of_points):
+		new_point = Point(random.randint(range_min, range_max), random.randint(range_min, range_max))
+		if new_point not in points[0]:
+			points[0].append(new_point)
 	points[0].sort(key=get_point_order_key)
 	point_segments = split_points(points[0])
-	
-	# print point_segments
 	merge_segments(point_segments)
 
 	return points
@@ -162,14 +177,14 @@ def form_triangle(point1, point2, point3, other_points):
 			return False
 	return True
 
-def plot(triangles):
-	for triangle in triangles:
-		points = [[triangle[0].x, triangle[0].y], [triangle[1].x, triangle[1].y], [triangle[2].x, triangle[2].y]]
-		shape = pyplot.Polygon(points, fill=None, edgecolor='r')
-		pyplot.gca().add_patch(shape)
+# def plot(triangles):
+# 	for triangle in triangles:
+# 		points = [[triangle[0].x, triangle[0].y], [triangle[1].x, triangle[1].y], [triangle[2].x, triangle[2].y]]
+# 		shape = pyplot.Polygon(points, fill=None, edgecolor='r')
+# 		pyplot.gca().add_patch(shape)
 
-	pyplot.plot(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
-	pyplot.show() 
+# 	pyplot.plot(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
+# 	pyplot.show() 
 
 #plot(compute(init()))
 init()
