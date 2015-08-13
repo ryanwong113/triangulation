@@ -63,6 +63,26 @@ def split_points(points):
 		split_index = int(math.ceil(len(points)/2.0))
 		return [split_points(points[:split_index])] + [split_points(points[split_index:len(points)])]
 
+# See whether other_points is contained in the triangle formed by point1, point2, point3
+def in_circumcircle(point1, point2, point3, other_points):
+	for other_point in other_points:
+		a = point1.x - other_point.x
+		b = point1.y - other_point.y
+		c = (point1.x**2 - other_point.x**2) + (point1.y**2 - other_point.y**2)
+		d = point2.x - other_point.x
+		e = point2.y - other_point.y
+		f = (point2.x**2 - other_point.x**2) + (point2.y**2 - other_point.y**2)
+		g = point3.x - other_point.x
+		h = point3.y - other_point.y
+		i = (point3.x**2 - other_point.x**2) + (point3.y**2 - other_point.y**2)
+
+		det = a*(e*i-c*f)-b*(d*i-f*g)+c*(d*h-e*g)
+		
+		# If det > 0, other_point is in circumcircle. So return false
+		if det > 0:
+			return False
+	return True
+
 # Merge the segments
 def merge_segments(segments):
 	for segment in segments:
@@ -85,23 +105,67 @@ def merge_segments(segments):
 			base_line = Line(segment_left_lowest, segment_right_lowest)
 			lines.append(base_line)
 
+			############################
+			### Start recursive here ###
+			############################
+
+			# Left and right base line points
+			left_base_line_point = base_line.point_a
+			right_base_line_point = base_line.point_b
+
 			# Check right segment
 			# Build a map of points to angle to the lowest_point
 			angle_map = {}
 			for point in segment_right.points:
-				vertical_distance = point.y - segment_right_lowest.y
-				horizontal_distance = segment_right_lowest.x - point.x
-				if (horizontal_distance < 0):
-					angle = math.pi - math.atan(float(vertical_distance)/float(-horizontal_distance))
-				elif (horizontal_distance == 0):
-					angle = math.pi/2
+				vertical_distance = point.y - right_base_line_point.y
+				horizontal_distance = right_base_line_point.x - point.x
+
+				# Use 4 quadrants to find the angle
+				if vertical_distance == 0:
+					if horizontal_distance > 0:
+						angle = 0
+					else:
+						angle = math.pi
+					angle_map[point] = angle
+				elif horizontal_distance == 0:
+					if vertical_distance > 0:
+						angle = math.pi/2
+						angle_map[point] = angle
+				elif vertical_distance > 0: 
+					# In first quadrant
+					if horizontal_distance > 0:
+						angle = math.atan(float(vertical_distance)/float(horizontal_distance))
+					# In second quadrant
+					else:
+						angle = math.pi - math.atan(float(vertical_distance)/float(-horizontal_distance))
+					angle_map[point] = angle
+
+			# There are no right candidates. Go check left segment.
+			if len(angle_map) == 0:
+				continue
+			else:
+				sorted_angle_map = sorted(angle_map.items(), key=operator.itemgetter(1))
+
+				candidates = list(sorted_angle_map)
+				if (len(candidates) == 1):
+					confirmed_candidate = candidates[0]
 				else:
-					angle = math.atan(float(vertical_distance)/float(horizontal_distance))
-				angle_map[point] = angle
+					for i in range(len(candidates)-1):
+						current_candidate = candidates[i]
+						next_candidate = candidates[i+1]
 
-			sorted_angle_map = sorted(angle_map.items(), key=operator.itemgetter(1))
+						# If next_candidate is in circumcircle
+						if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
+							# current_candidate is not the confirmed right segment candidate
+							print ''
+							
+						else:
+							# current_candidate is the confirmed right segment candidate
+							confirmed_candidate = current_candidate
+							break
 
-			
+
+
 
 			# Confirmed right segment candidate
 
@@ -151,31 +215,13 @@ def compute(all_points):
 		other_points.remove(point_b)
 		other_points.remove(point_c)
 
-		if form_triangle(point_a, point_b, point_c, other_points):
+		if in_circumcircle(point_a, point_b, point_c, other_points):
 			results.append(combination)
 
 	return results
 
 
-# Test whether the given three points form a triangle or not
-def form_triangle(point1, point2, point3, other_points):
-	for other_point in other_points:
-		a = point1.x - other_point.x
-		b = point1.y - other_point.y
-		c = (point1.x**2 - other_point.x**2) + (point1.y**2 - other_point.y**2)
-		d = point2.x - other_point.x
-		e = point2.y - other_point.y
-		f = (point2.x**2 - other_point.x**2) + (point2.y**2 - other_point.y**2)
-		g = point3.x - other_point.x
-		h = point3.y - other_point.y
-		i = (point3.x**2 - other_point.x**2) + (point3.y**2 - other_point.y**2)
 
-		det = a*(e*i-c*f)-b*(d*i-f*g)+c*(d*h-e*g)
-		
-		# If det > 0, other_point is in circumcircle. So return false
-		if det > 0:
-			return False
-	return True
 
 # def plot(triangles):
 # 	for triangle in triangles:
