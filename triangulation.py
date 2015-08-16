@@ -1,9 +1,10 @@
+import copy
 import itertools
+import math
+import operator
 import random
 # import matplotlib.pyplot as pyplot
-import math
 # from matplotlib.collections import PolyCollection
-import operator
 
 # Inner point class
 class Point:
@@ -28,6 +29,7 @@ class Line:
 	def __init__(self, point_a, point_b):
 		self.point_a = point_a
 		self.point_b = point_b
+		self.distance = math.sqrt((point_a.x - point_b.x)**2 + (point_a.y - point_b.y)**2)
 
 	def __eq__(self, other):
 		return ((self.point_a == other.point_a) and (self.point_b == other.point_b)) or ((self.point_a == other.point_b) and (self.point_b == other.point_a))
@@ -81,113 +83,94 @@ def in_circumcircle(point_a, point_b, point_c, other_point):
 	return (det <= 0)
 
 
-# Recursive function for generating new segment by merging two segments together
-def generate_new_segment():
+# Recursive function for generating lines connecting two segments
+def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, full_segment_right):
+
 	# Left and right base line points
 	left_base_line_point = base_line.point_a
 	right_base_line_point = base_line.point_b
 
+	print 'left base line point: ' + str(left_base_line_point)
+	print 'right base line point: ' + str(right_base_line_point)
+
+	print 'full_segment_left point: ' + str(full_segment_left.points)
+	print 'full_segment_right point: ' + str(full_segment_right.points)
+
+	# Remove the base line points from left and right segments
+	segment_left = copy.deepcopy(full_segment_left)
+	segment_right = copy.deepcopy(full_segment_right)
+	segment_left.points.remove(left_base_line_point)
+	segment_right.points.remove(right_base_line_point)
+
 	# Check right segment
 	# Build a map of points to angle to the lowest_point
+	base_line_vector = Point(left_base_line_point.x - right_base_line_point.x, left_base_line_point.y - right_base_line_point.y)
 	angle_map = {}
 	for point in segment_right.points:
-		vertical_distance = point.y - right_base_line_point.y
-		horizontal_distance = right_base_line_point.x - point.x
+		right_to_point_vector = Point(point.x - right_base_line_point.x, point.y - right_base_line_point.y)
 
-		# Use 4 quadrants to find the angle
-		if vertical_distance == 0:
-			if horizontal_distance > 0:
-				angle = 0
-			else:
-				angle = math.pi
-			angle_map[point] = angle
-		elif horizontal_distance == 0:
-			if vertical_distance > 0:
-				angle = math.pi/2
-				angle_map[point] = angle
-		elif vertical_distance > 0: 
-			# In first quadrant
-			if horizontal_distance > 0:
-				angle = math.atan(float(vertical_distance)/float(horizontal_distance))
-			# In second quadrant
-			else:
-				angle = math.pi - math.atan(float(vertical_distance)/float(-horizontal_distance))
+		angle = math.atan2((right_to_point_vector.x * base_line_vector.y) - (base_line_vector.x * right_to_point_vector.y), (base_line_vector.x * right_to_point_vector.x) + (base_line_vector.y * right_to_point_vector.y))
+
+		if angle >= 0:
 			angle_map[point] = angle
 
-	# There are no right candidates. Go check left segment.
-	if len(angle_map) == 0:
-		continue
-	else:
-		confirmed_right_candidate = None
-		candidates = sorted(angle_map.items(), key=operator.itemgetter(1))
-		if (len(candidates) == 1):
-			confirmed_right_candidate = candidates[0][0]
-		else:
-			for i in range(len(candidates)-1):
-				current_candidate = candidates[i][0]
-				next_candidate = candidates[i+1][0]
+	print 'Right angle map: ' + str(angle_map)
 
-				# If next_candidate is in circumcircle
-				if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
-					# current_candidate is not the confirmed right segment candidate
-					lines.remove(Line(right_base_line_point, current_candidate))
-				else:
-					# current_candidate is the confirmed right segment candidate
-					confirmed_right_candidate = current_candidate
-					break
+	# Check whether there are any candidates in the right segment
+	candidates = sorted(angle_map.items(), key=operator.itemgetter(1))
+	confirmed_right_candidate = None
+	if len(candidates) == 1:
+		confirmed_right_candidate = candidates[0][0]
+	elif len(candidates) > 1:
+		for i in range(len(candidates)-1):
+			current_candidate = candidates[i][0]
+			next_candidate = candidates[i+1][0]
+			# If next_candidate is in circumcircle
+			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
+				# current_candidate is not the confirmed right segment candidate
+				lines.remove(Line(right_base_line_point, current_candidate))
+			else:
+				# current_candidate is the confirmed right segment candidate
+				confirmed_right_candidate = current_candidate
 
 	# Check left segment
+	# Build a map of points to angle to the lowest_point
+	base_line_vector = Point(right_base_line_point.x - left_base_line_point.x, right_base_line_point.y - left_base_line_point.y)
 	angle_map = {}
 	for point in segment_left.points:
-		vertical_distance = point.y - left_base_line_point.y
-		horizontal_distance = point.x - left_base_line_point.x
+		left_to_point_vector = Point(point.x - left_base_line_point.x, point.y - left_base_line_point.y)
 
-		# Use 4 quadrants to find the angle
-		if vertical_distance == 0:
-			if horizontal_distance > 0:
-				angle = 0
+		angle = math.atan2((left_to_point_vector.x * base_line_vector.y) - (base_line_vector.x * left_to_point_vector.y), (base_line_vector.x * left_to_point_vector.x) + (base_line_vector.y * left_to_point_vector.y))
+
+		if angle <= 0:
+			angle_map[point] = math.pi + angle
+
+	print 'Left angle map: ' + str(angle_map)
+
+	# Check whether there are any candidates in the left segment
+	candidates = sorted(angle_map.items(), key=operator.itemgetter(1))
+	confirmed_left_candidate = None
+	if len(candidates) == 1:
+		confirmed_left_candidate = candidates[0][0]
+	elif len(candidates) > 1:
+		for i in range(len(candidates)-1):
+			current_candidate = candidates[i][0]
+			next_candidate = candidates[i+1][0]
+			# If next_candidate is in circumcircle
+			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
+				# current_candidate is not the confirmed left segment candidate
+				lines.remove(Line(left_base_line_point, current_candidate))
 			else:
-				angle = math.pi
-			angle_map[point] = angle
-		elif horizontal_distance == 0:
-			if vertical_distance > 0:
-				angle = math.pi/2
-				angle_map[point] = angle
-		elif vertical_distance > 0: 
-			# In first quadrant
-			if horizontal_distance > 0:
-				angle = math.atan(float(vertical_distance)/float(horizontal_distance))
-			# In second quadrant
-			else:
-				angle = math.pi - math.atan(float(vertical_distance)/float(-horizontal_distance))
-			angle_map[point] = angle
+				# current_candidate is the confirmed left segment candidate
+				confirmed_left_candidate = current_candidate
+	
+	# Try adding a new line to connect two segments
+	print 'Confirmed right candidate: ' + str(confirmed_right_candidate)
+	print 'Confirmed left candidate: ' + str(confirmed_left_candidate)
 
-	# There are no left candidates.
-	if len(angle_map) == 0:
-		continue
-	else:
-		confirmed_left_candidate = None
-		candidates = sorted(angle_map.items(), key=operator.itemgetter(1))
-		if (len(candidates) == 1):
-			confirmed_left_candidate = candidates[0][0]
-		else:
-			for i in range(len(candidates)-1):
-				current_candidate = candidates[i][0]
-				next_candidate = candidates[i+1][0]
-
-				# If next_candidate is in circumcircle
-				if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
-					# current_candidate is not the confirmed right segment candidate
-					lines.remove(Line(left_base_line_point, current_candidate))
-				else:
-					# current_candidate is the confirmed left segment candidate
-					confirmed_left_candidate = current_candidate
-					break
-		
-	# Finished merging segment
+	# Create and return a new merged segment
 	if (confirmed_right_candidate is None) and (confirmed_left_candidate is None):
-		# Create and return a new merged segment
-		return Segment(points, lines)
+		return lines
 	elif (confirmed_right_candidate is not None) and (confirmed_left_candidate is None):
 		new_line = Line(confirmed_right_candidate, left_base_line_point)
 		lines.append(new_line)
@@ -196,10 +179,14 @@ def generate_new_segment():
 		lines.append(new_line)
 	else:
 		if in_circumcircle(left_base_line_point, right_base_line_point, confirmed_left_candidate, confirmed_right_candidate):
-			new_line = Line(confirmed_right_candidate, left_base_line_point)
-		else:
 			new_line = Line(confirmed_left_candidate, right_base_line_point)
+		else:
+			new_line = Line(confirmed_right_candidate, left_base_line_point)
+
+		print 'new line: ' + str(new_line)
 		lines.append(new_line)
+
+	return generate_lines_connecting_two_segments(new_line, lines, full_segment_left, full_segment_right)
 
 
 
@@ -210,53 +197,44 @@ def merge_segments(segments):
 			merge_segments(segment)
 		else:
 			# Merge 2 segments together
-			points = []
-			lines = []
-
 			segment_left = segments[0]
 			segment_right = segments[1]
 			segment_left_lowest = segment_left.lowest_point
 			segment_right_lowest = segment_right.lowest_point
 
-			points.extend(segment_left.points)
-			points.extend(segment_right.points)
-			lines.extend(segment_left.lines)
-			lines.extend(segment_right.lines)
-
-			# Remove the lowest points from left and right segments
-			segment_left.points.remove(segment_left_lowest)
-			segment_right.points.remove(segment_right_lowest)
+			# Initiate the new segment points and lines
+			points = segment_left.points + segment_right.points
+			lines = segment_left.lines + segment_right.lines
 
 			# Base line
 			base_line = Line(segment_left_lowest, segment_right_lowest)
 			lines.append(base_line)
 
-			############################
-			### Start recursive here ###
-			############################
+			# base_line = Line(Point(2, 4), Point(2, 6))
 
-			
+			# Generate the lines connecting two segments
+			lines_connecting_segments = generate_lines_connecting_two_segments(base_line, lines, segment_left, segment_right)	
 
+			print 'Line connecting segments: ' + str(lines_connecting_segments)
 
-			
+		break		
 
 
 # Initialisation
 def init():
 	range_min = 1
 	range_max = 10
-	num_of_points = 50
+	num_of_points = 10
 	points = [[]]
 	for i in range(0, num_of_points):
-		new_point = Point(random.randint(range_min, range_max), random.randint(range_min, range_max))
-		if new_point not in points[0]:
-			points[0].append(new_point)
+		while True:
+			new_point = Point(random.randint(range_min, range_max), random.randint(range_min, range_max))
+			if new_point not in points[0]:
+				points[0].append(new_point)
+				break
 	points[0].sort(key=get_point_order_key)
 	point_segments = split_points(points[0])
 	merge_segments(point_segments)
-
-	return points
-
 
 # def plot(triangles):
 # 	for triangle in triangles:
@@ -267,5 +245,23 @@ def init():
 # 	pyplot.plot(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
 # 	pyplot.show() 
 
+def test_case():
+	# points = [[Point(2, 6), Point(6, 6), Point(10, 6), Point(2, 4), Point(8, 4), Point(0, 2), Point(4, 2), Point(10, 2), Point(2, 0), Point(10, 0)]]
+	points = [[Point(6, 6), Point(10, 6), Point(8, 4), Point(10, 2), Point(10, 0)]]
+	# points = [[Point(2, 6), Point(2, 4), Point(0, 2), Point(4, 2), Point(2, 0)]]
+	points[0].sort(key=get_point_order_key)
+	point_segments = split_points(points[0])
+	merge_segments(point_segments)
+	
+
 #plot(compute(init()))
-init()
+#init()
+test_case()
+
+
+
+
+
+
+
+
