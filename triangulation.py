@@ -80,7 +80,7 @@ def in_circumcircle(point_a, point_b, point_c, other_point):
 	det = a*(e*i-c*f)-b*(d*i-f*g)+c*(d*h-e*g)
 	
 	# If det > 0, other_point is in circumcircle. So return false
-	return (det <= 0)
+	return (det > 0)
 
 
 # Recursive function for generating lines connecting two segments
@@ -96,6 +96,8 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 	print 'full_segment_left point: ' + str(full_segment_left.points)
 	print 'full_segment_right point: ' + str(full_segment_right.points)
 
+	print 'lines: ' + str(lines)
+
 	# Remove the base line points from left and right segments
 	segment_left = copy.deepcopy(full_segment_left)
 	segment_right = copy.deepcopy(full_segment_right)
@@ -108,6 +110,10 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 	angle_map = {}
 	for point in segment_right.points:
 		right_to_point_vector = Point(point.x - right_base_line_point.x, point.y - right_base_line_point.y)
+		angle = math.atan2((right_to_point_vector.x * base_line_vector.y) - (base_line_vector.x * right_to_point_vector.y), (base_line_vector.x * right_to_point_vector.x) + (base_line_vector.y * right_to_point_vector.y))
+
+		if angle >= 0:
+			angle_map[point] = angle
 
 		angle = math.atan2((right_to_point_vector.x * base_line_vector.y) - (base_line_vector.x * right_to_point_vector.y), (base_line_vector.x * right_to_point_vector.x) + (base_line_vector.y * right_to_point_vector.y))
 
@@ -125,10 +131,13 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 		for i in range(len(candidates)-1):
 			current_candidate = candidates[i][0]
 			next_candidate = candidates[i+1][0]
-			# If next_candidate is in circumcircle
+
+			# If next_candidate is in circumcircle. Note: the order of first 3 arguments must be counter-clockwise
 			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
 				# current_candidate is not the confirmed right segment candidate
-				lines.remove(Line(right_base_line_point, current_candidate))
+				line_to_be_removed = Line(current_candidate, right_base_line_point)
+				print 'Line to be removed: ' + str(line_to_be_removed)
+				lines.remove(line_to_be_removed)
 			else:
 				# current_candidate is the confirmed right segment candidate
 				confirmed_right_candidate = current_candidate
@@ -143,7 +152,7 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 		angle = math.atan2((left_to_point_vector.x * base_line_vector.y) - (base_line_vector.x * left_to_point_vector.y), (base_line_vector.x * left_to_point_vector.x) + (base_line_vector.y * left_to_point_vector.y))
 
 		if angle <= 0:
-			angle_map[point] = math.pi + angle
+			angle_map[point] = -angle
 
 	print 'Left angle map: ' + str(angle_map)
 
@@ -156,10 +165,12 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 		for i in range(len(candidates)-1):
 			current_candidate = candidates[i][0]
 			next_candidate = candidates[i+1][0]
-			# If next_candidate is in circumcircle
+			# If next_candidate is in circumcircle. Note: the order of first 3 arguments must be counter-clockwise
 			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
 				# current_candidate is not the confirmed left segment candidate
-				lines.remove(Line(left_base_line_point, current_candidate))
+				line_to_be_removed = Line(left_base_line_point, current_candidate)
+				print 'Line to be removed: ' + str(line_to_be_removed)
+				lines.remove(line_to_be_removed)
 			else:
 				# current_candidate is the confirmed left segment candidate
 				confirmed_left_candidate = current_candidate
@@ -172,16 +183,16 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 	if (confirmed_right_candidate is None) and (confirmed_left_candidate is None):
 		return lines
 	elif (confirmed_right_candidate is not None) and (confirmed_left_candidate is None):
-		new_line = Line(confirmed_right_candidate, left_base_line_point)
+		new_line = Line(left_base_line_point, confirmed_right_candidate)
 		lines.append(new_line)
 	elif (confirmed_right_candidate is None) and (confirmed_left_candidate is not None):
 		new_line = Line(confirmed_left_candidate, right_base_line_point)
 		lines.append(new_line)
 	else:
 		if in_circumcircle(left_base_line_point, right_base_line_point, confirmed_left_candidate, confirmed_right_candidate):
-			new_line = Line(confirmed_left_candidate, right_base_line_point)
+			new_line = Line(left_base_line_point, confirmed_right_candidate)
 		else:
-			new_line = Line(confirmed_right_candidate, left_base_line_point)
+			new_line = Line(confirmed_left_candidate, right_base_line_point)
 
 		print 'new line: ' + str(new_line)
 		lines.append(new_line)
@@ -209,8 +220,6 @@ def merge_segments(segments):
 			# Base line
 			base_line = Line(segment_left_lowest, segment_right_lowest)
 			lines.append(base_line)
-
-			# base_line = Line(Point(2, 4), Point(2, 6))
 
 			# Generate the lines connecting two segments
 			lines_connecting_segments = generate_lines_connecting_two_segments(base_line, lines, segment_left, segment_right)	
@@ -247,8 +256,8 @@ def init():
 
 def test_case():
 	# points = [[Point(2, 6), Point(6, 6), Point(10, 6), Point(2, 4), Point(8, 4), Point(0, 2), Point(4, 2), Point(10, 2), Point(2, 0), Point(10, 0)]]
-	points = [[Point(6, 6), Point(10, 6), Point(8, 4), Point(10, 2), Point(10, 0)]]
-	# points = [[Point(2, 6), Point(2, 4), Point(0, 2), Point(4, 2), Point(2, 0)]]
+	# points = [[Point(6, 6), Point(10, 6), Point(8, 4), Point(10, 2), Point(10, 0)]]
+	points = [[Point(2, 6), Point(2, 4), Point(0, 2), Point(4, 2), Point(2, 0)]]
 	points[0].sort(key=get_point_order_key)
 	point_segments = split_points(points[0])
 	merge_segments(point_segments)
