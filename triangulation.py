@@ -140,7 +140,8 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 				lines.remove(line_to_be_removed)
 			else:
 				# current_candidate is the confirmed right segment candidate
-				confirmed_right_candidate = current_candidate
+				if confirmed_right_candidate is None:
+					confirmed_right_candidate = current_candidate
 
 	# Check left segment
 	# Build a map of points to angle to the lowest_point
@@ -166,14 +167,15 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 			current_candidate = candidates[i][0]
 			next_candidate = candidates[i+1][0]
 			# If next_candidate is in circumcircle. Note: the order of first 3 arguments must be counter-clockwise
-			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
+			if (in_circumcircle(right_base_line_point, left_base_line_point, current_candidate, next_candidate)):
 				# current_candidate is not the confirmed left segment candidate
 				line_to_be_removed = Line(left_base_line_point, current_candidate)
 				print 'Line to be removed: ' + str(line_to_be_removed)
 				lines.remove(line_to_be_removed)
 			else:
 				# current_candidate is the confirmed left segment candidate
-				confirmed_left_candidate = current_candidate
+				if confirmed_left_candidate is None:
+					confirmed_left_candidate = current_candidate
 	
 	# Try adding a new line to connect two segments
 	print 'Confirmed right candidate: ' + str(confirmed_right_candidate)
@@ -200,12 +202,13 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 	return generate_lines_connecting_two_segments(new_line, lines, full_segment_left, full_segment_right)
 
 
-
 # Merge the segments
 def merge_segments(segments):
+	points = []
+	lines_connecting_segments = []
 	for segment in segments:
 		if type(segment) is list:
-			merge_segments(segment)
+			return [merge_segments(segments[0]), merge_segments(segments[1])]
 		else:
 			# Merge 2 segments together
 			segment_left = segments[0]
@@ -214,7 +217,7 @@ def merge_segments(segments):
 			segment_right_lowest = segment_right.lowest_point
 
 			# Initiate the new segment points and lines
-			points = segment_left.points + segment_right.points
+			points.extend(segment_left.points + segment_right.points)
 			lines = segment_left.lines + segment_right.lines
 
 			# Base line
@@ -222,11 +225,9 @@ def merge_segments(segments):
 			lines.append(base_line)
 
 			# Generate the lines connecting two segments
-			lines_connecting_segments = generate_lines_connecting_two_segments(base_line, lines, segment_left, segment_right)	
+			lines_connecting_segments.extend(generate_lines_connecting_two_segments(base_line, lines, segment_left, segment_right))
 
-			print 'Line connecting segments: ' + str(lines_connecting_segments)
-
-		break		
+			return Segment(points, lines_connecting_segments)
 
 
 # Initialisation
@@ -243,7 +244,17 @@ def init():
 				break
 	points[0].sort(key=get_point_order_key)
 	point_segments = split_points(points[0])
-	merge_segments(point_segments)
+
+	while True:
+		point_segments = merge_segments(point_segments)
+		if type(point_segments) is not list:
+			 break
+
+	print result
+
+	print 'result points: ' + str(result.points)
+	print 'result lines: ' + str(result.lines)
+
 
 # def plot(triangles):
 # 	for triangle in triangles:
@@ -255,16 +266,21 @@ def init():
 # 	pyplot.show() 
 
 def test_case():
-	# points = [[Point(2, 6), Point(6, 6), Point(10, 6), Point(2, 4), Point(8, 4), Point(0, 2), Point(4, 2), Point(10, 2), Point(2, 0), Point(10, 0)]]
+	points = [[Point(2, 6), Point(6, 6), Point(10, 6), Point(2, 4), Point(8, 4), Point(0, 2), Point(4, 2), Point(10, 2), Point(2, 0), Point(10, 0)]]
 	# points = [[Point(6, 6), Point(10, 6), Point(8, 4), Point(10, 2), Point(10, 0)]]
-	points = [[Point(2, 6), Point(2, 4), Point(0, 2), Point(4, 2), Point(2, 0)]]
+	# points = [[Point(2, 6), Point(2, 4), Point(0, 2), Point(4, 2), Point(2, 0)]]
 	points[0].sort(key=get_point_order_key)
 	point_segments = split_points(points[0])
-	merge_segments(point_segments)
+	result = merge_segments(point_segments)
+
+	print result
+
+	result_2 = merge_segments(result)
+	print result_2
 	
 
 #plot(compute(init()))
-#init()
+# init()
 test_case()
 
 
