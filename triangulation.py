@@ -3,9 +3,9 @@ import itertools
 import math
 import operator
 import random
+
 from pyx import *
-# import matplotlib.pyplot as pyplot
-# from matplotlib.collections import PolyCollection
+import matplotlib.pyplot as pyplot
 
 # Inner point class
 class Point:
@@ -161,7 +161,7 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 					confirmed_left_candidate = current_candidate
 	
 	# Try adding a new line to connect two segments
-	# Create and return a new merged segment
+	# Return the lines connecting the segments. Otherwise append the new line.
 	if (confirmed_right_candidate is None) and (confirmed_left_candidate is None):
 		return lines
 	elif (confirmed_right_candidate is not None) and (confirmed_left_candidate is None):
@@ -186,45 +186,46 @@ def merge_segments(segments):
 	lines_connecting_segments = []
 
 	if type(segments) is list:
-		for segment in segments:
-			if type(segment) is list:
-				return merge_segments([merge_segments(segments[0]), merge_segments(segments[1])])
-			else:
-				# Merge 2 segments together
-				segment_left = segments[0]
-				segment_right = segments[1]
-				segment_left_lowest = segment_left.lowest_point
-				segment_right_lowest = segment_right.lowest_point
+		if type(segments[0]) is list:
+			return merge_segments([merge_segments(segments[0]), merge_segments(segments[1])])
+		else:
+			# Merge 2 segments together
+			segment_left = segments[0]
+			segment_right = segments[1]
+			segment_left_lowest = segment_left.lowest_point
+			segment_right_lowest = segment_right.lowest_point
 
-				# Initiate the new segment points and lines
-				points.extend(segment_left.points + segment_right.points)
-				lines = segment_left.lines + segment_right.lines
+			# Initiate the new segment points and lines
+			points.extend(segment_left.points + segment_right.points)
+			lines = segment_left.lines + segment_right.lines
 
-				# Starting base line
-				base_line = Line(segment_left_lowest, segment_right_lowest)
-				lines.append(base_line)
+			# Starting base line
+			base_line = Line(segment_left_lowest, segment_right_lowest)
+			lines.append(base_line)
 
-				# Generate the lines connecting two segments
-				lines_connecting_segments.extend(generate_lines_connecting_two_segments(base_line, lines, segment_left, segment_right))
+			# Generate the lines connecting two segments
+			lines_connecting_segments.extend(generate_lines_connecting_two_segments(base_line, lines, segment_left, segment_right))
 
-				return Segment(points, lines_connecting_segments)
+			return Segment(points, lines_connecting_segments)
 
 	return segments
 
-
-
-
-# def plot(triangles):
-# 	for triangle in triangles:
-# 		points = [[triangle[0].x, triangle[0].y], [triangle[1].x, triangle[1].y], [triangle[2].x, triangle[2].y]]
-# 		shape = pyplot.Polygon(points, fill=None, edgecolor='r')
-# 		pyplot.gca().add_patch(shape)
-
-# 	pyplot.plot(num=None, figsize=(8, 6), dpi=80, facecolor='w', edgecolor='k')
-# 	pyplot.show() 
+def plot_pyx(segment):
+	c = canvas.canvas()
+	lines = segment.lines
+	points = []
+	for line in lines:
+		c.stroke(path.line(line.point_a.x, line.point_a.y, line.point_b.x, line.point_b.y))
+	c.writeEPSfile("path")
 	
+def plot_matplotlib(segment):
+	lines = segment.lines
+	for line in lines:
+		point_a = line.point_a
+		point_b = line.point_b
+		pyplot.plot([point_a.x, point_b.x], [point_a.y, point_b.y])
 
-#plot(compute(init()))
+	pyplot.show() 
 
 
 
