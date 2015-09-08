@@ -50,7 +50,7 @@ class Segment:
 		self.size = len(points)
 
 	def __repr__(self):
-		return 'Segment %d' % (self.size)
+		return 'Segment size: %s' % (self.size)
 
 
 # Main program
@@ -77,12 +77,9 @@ def in_circumcircle(point_a, point_b, point_c, other_point):
 	g = point_c.x - other_point.x
 	h = point_c.y - other_point.y
 	i = (point_c.x**2 - other_point.x**2) + (point_c.y**2 - other_point.y**2)
-
 	det = (a * ((e * i) - (f * h))) - (b * ((d * i) - (f * g))) + (c * ((d * h) - (e * g)))
-	
 	# If det > 0, other_point is in circumcircle. So return false
 	return (det > 0)
-
 
 # Recursive function for generating lines connecting two segments
 def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, full_segment_right):
@@ -110,13 +107,11 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 	# Check whether there are any candidates in the right segment
 	candidates = sorted(angle_map.items(), key=operator.itemgetter(1))
 	confirmed_right_candidate = None
-	if len(candidates) == 1:
-		confirmed_right_candidate = candidates[0][0]
-	elif len(candidates) > 1:
-		for i in range(len(candidates)-1):
-			current_candidate = candidates[i][0]
+	num_of_candidates = len(candidates)
+	for i in range(num_of_candidates):
+		current_candidate = candidates[i][0]
+		if (i + 1 < num_of_candidates):
 			next_candidate = candidates[i+1][0]
-
 			# If next_candidate is in circumcircle. Note: the order of first 3 arguments must be counter-clockwise
 			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
 				# current_candidate is not the confirmed right segment candidate
@@ -127,6 +122,9 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 				# current_candidate is the confirmed right segment candidate
 				if confirmed_right_candidate is None:
 					confirmed_right_candidate = current_candidate
+		else:
+			if confirmed_right_candidate is None:
+				confirmed_right_candidate = current_candidate
 
 	# Check left segment
 	# Build a map of points to angle to the lowest_point
@@ -143,11 +141,10 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 	# Check whether there are any candidates in the left segment
 	candidates = sorted(angle_map.items(), key=operator.itemgetter(1))
 	confirmed_left_candidate = None
-	if len(candidates) == 1:
-		confirmed_left_candidate = candidates[0][0]
-	elif len(candidates) > 1:
-		for i in range(len(candidates)-1):
-			current_candidate = candidates[i][0]
+	num_of_candidates = len(candidates)
+	for i in range(num_of_candidates):
+		current_candidate = candidates[i][0]
+		if (i + 1 < num_of_candidates):
 			next_candidate = candidates[i+1][0]
 			# If next_candidate is in circumcircle. Note: the order of first 3 arguments must be counter-clockwise
 			if (in_circumcircle(left_base_line_point, right_base_line_point, current_candidate, next_candidate)):
@@ -159,6 +156,9 @@ def generate_lines_connecting_two_segments(base_line, lines, full_segment_left, 
 				# current_candidate is the confirmed left segment candidate
 				if confirmed_left_candidate is None:
 					confirmed_left_candidate = current_candidate
+		else:
+			if confirmed_left_candidate is None:
+				confirmed_left_candidate = current_candidate
 	
 	# Try adding a new line to connect two segments
 	# Return the lines connecting the segments. Otherwise append the new line.
@@ -210,14 +210,15 @@ def merge_segments(segments):
 
 	return segments
 
+# Draw the image using pyx
 def plot_pyx(segment):
 	c = canvas.canvas()
 	lines = segment.lines
-	points = []
 	for line in lines:
 		c.stroke(path.line(line.point_a.x, line.point_a.y, line.point_b.x, line.point_b.y))
 	c.writeEPSfile("path")
-	
+
+# Draw the image using matplotlib
 def plot_matplotlib(segment):
 	lines = segment.lines
 	for line in lines:
